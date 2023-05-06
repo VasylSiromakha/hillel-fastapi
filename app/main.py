@@ -1,15 +1,21 @@
 import json
 from typing import Annotated, Optional
 
+from sqlalchemy.ext.asyncio import async_session
+
+from app.dependencies.db import SQLALCHEMY_DATABASE_URL
+from app.models import BookCreate, Book, BookUpdate
 from app.routers.books import router as books
 
-from fastapi import FastAPI, Response, Header, Cookie, UploadFile, Request
+from fastapi import FastAPI, Response, Header, Cookie, UploadFile
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 app = FastAPI()
 app.include_router(
     router=books,
 )
-
 
 # @app.middleware("http")
 # async def check_basic_auth(request: Request, call_next):
@@ -53,3 +59,65 @@ async def get_cookie_or_default(
 @app.post("/upload")
 async def upload_file(file: UploadFile):
     return {"size": len(await file.read())}
+
+
+@app.post("/books")
+async def create_book(book: BookCreate):
+    async with async_session() as session:
+        new_book = Book(title=book.title, author=book.author, pages_count=book.pages_count)
+        session.add(new_book)
+        await session.commit()
+        await session.refresh(new_book)
+        return new_book
+
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Реалізувати пошук книжки по id
+@app.get("/books/{book_id}")
+async def get_book(book_id: int):
+    db = SessionLocal()
+    book = db.query(Book).filter(Book.id == book_id).first()
+    db.close()
+
+    if book is None:
+        return {"error": "Book not found"}
+
+    return {"book_id": book.id, "title": book.title, "author": book.author, "pages_count": book.pages_count}
+
+# Реалізувати оновлення книжки по id
+@app.put("/books/{book_id}")
+async def update_book(book_id: int, book_update: BookUpdate):
+    db = SessionLocal()
+    book = db.query(Book).filter(Book.id == book_id).first()
+
+    if book is None:
+        db.close()
+        return {"error": "Book not found"}
+
+
+    book.title = book_update.title
+    book.author = book_update.author
+    book.pages_count = book_update.pages_count
+
+    db.commit()
+    db.close()
+
+    return {"message": "Book updated successfully"}
+
+# Реалізувати видалення книжки по id
+@app.delete("/books/delete/{book_id}")
+async def delete_book(book_id: int):
+    db = SessionLocal()
+    book = db.query(Book).filter(Book.id == book_id).first()
+
+    if book is None:
+        db.close()
+        return {"error": "Book not found"}
+
+    db.delete(book)
+    db.commit()
+    db.close()
+
+    return {"message": "Book deleted successfully"}
