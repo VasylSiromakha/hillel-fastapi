@@ -6,18 +6,18 @@ import requests
 # print(response.json())
 
 # Create a book
-# response = requests.post(
-#     "http://127.0.0.1:8001/books",
-#     json={
-#         "title": "The Great Gatsby 4",
-#         "author": "Fuck. Scott Fitzgerald",
-#     },
-# )
-# print(response.json())
+response = requests.post(
+    "http://127.0.0.1:8001/books",
+    json={
+        "title": "The Great Gatsby 4",
+        "author": "Fuck. Scott Fitzgerald",
+        "pages_count": 55,
+    },
+)
 
 # update book
 # response = requests.put(
-#     "http://127.0.0.1:8001/books/1",
+#     "http://127.0.0.1:8001/books/7",
 #     json={
 #         "title": "The Great Gatsby 3",
 #         "author": "Fuck. Scott Fitzgerald",\
@@ -25,6 +25,8 @@ import requests
 #     },
 # )
 #delete book
-response = requests.delete(
-    "http://127.0.0.1:8001/books/delete/1",
-    )
+# response = requests.delete(
+#     "http://127.0.0.1:8001/books/delete/2",
+#     )
+print(response.text)
+print(response)

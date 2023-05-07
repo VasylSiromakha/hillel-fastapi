@@ -2,12 +2,13 @@ import json
 from typing import Annotated, Optional
 
 from sqlalchemy.ext.asyncio import async_session
+from starlette.status import HTTP_204_NO_CONTENT
 
 from app.dependencies.db import SQLALCHEMY_DATABASE_URL
 from app.models import BookCreate, Book, BookUpdate
 from app.routers.books import router as books
 
-from fastapi import FastAPI, Response, Header, Cookie, UploadFile
+from fastapi import FastAPI, Response, Header, Cookie, UploadFile, HTTPException, status
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -82,7 +83,7 @@ async def get_book(book_id: int):
     db.close()
 
     if book is None:
-        return {"error": "Book not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
     return {"book_id": book.id, "title": book.title, "author": book.author, "pages_count": book.pages_count}
 
@@ -94,7 +95,7 @@ async def update_book(book_id: int, book_update: BookUpdate):
 
     if book is None:
         db.close()
-        return {"error": "Book not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
 
     book.title = book_update.title
@@ -114,10 +115,10 @@ async def delete_book(book_id: int):
 
     if book is None:
         db.close()
-        return {"error": "Book not found"}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
     db.delete(book)
     db.commit()
     db.close()
 
-    return {"message": "Book deleted successfully"}
+    return Response(status_code=HTTP_204_NO_CONTENT)
